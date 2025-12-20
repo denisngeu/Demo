@@ -1,29 +1,19 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo SITE_NAME; ?></title>
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/style.css">
+<meta charset="UTF-8">
+<title>E‑Commerce</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="../assets/style.css">
 </head>
 <body>
-    <header>
-        <nav>
-            <div class="logo">
-                <h1><?php echo SITE_NAME; ?></h1>
-            </div>
-            <ul class="nav-links">
-                <li><a href="<?php echo SITE_URL; ?>/public/index.php">Accueil</a></li>
-                <li><a href="<?php echo SITE_URL; ?>/public/products.php">Produits</a></li>
-                <li><a href="<?php echo SITE_URL; ?>/public/cart.php">Panier</a></li>
-                <?php if(isset($_SESSION['user_id'])): ?>
-                    <li><a href="<?php echo SITE_URL; ?>/public/customers.php">Mon Compte</a></li>
-                    <li><a href="<?php echo SITE_URL; ?>/public/logout.php">Déconnexion</a></li>
-                <?php else: ?>
-                    <li><a href="<?php echo SITE_URL; ?>/public/login.php">Connexion</a></li>
-                    <li><a href="<?php echo SITE_URL; ?>/public/register.php">Inscription</a></li>
-                <?php endif; ?>
-            </ul>
-        </nav>
-    </header>
-    <main>
+<nav class="navbar navbar-dark bg-dark">
+<div class="container">
+<a class="navbar-brand" href="index.php">MyShop</a>
+<a class="nav-link text-white" href="products.php">Produits</a>
+<a class="nav-link text-white" href="cart.php">Panier</a>
+<a class="nav-link text-white" href="login.php">Connexion</a>
+<a class="nav-link text-white" href="register.php">Inscription</a>
+</div>
+</nav>
+<div class="container mt-4">
