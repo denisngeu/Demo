@@ -1,0 +1,2241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloumeGen - Assistant Intelligent</title>
+    <style>
+        /* ====================================
+           VARIABLES CSS & RESET
+           ==================================== */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --dark-bg: #0f0e17;
+            --darker-bg: #1a1a2e;
+            --card-bg: #16213e;
+            --text-primary: #e8e8e8;
+            --text-secondary: #a7a9be;
+            --success: #4ade80;
+            --warning: #fbbf24;
+            --error: #ef4444;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --border-radius: 12px;
+            --transition-speed: 0.3s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ====================================
+           ANIMATIONS
+           ==================================== */
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        @keyframes snowfall {
+            0% {
+                transform: translateY(-10px) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) translateX(50px);
+                opacity: 0;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+
+        /* ====================================
+           BOUTON FLOTTANT DU CHATBOT
+           ==================================== */
+        #bloume-chatbot-button {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--shadow-lg);
+            z-index: 9998;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform var(--transition-speed) ease, box-shadow var(--transition-speed) ease;
+            overflow: hidden;
+        }
+
+        #bloume-chatbot-button:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 48px rgba(102, 126, 234, 0.5);
+        }
+
+        #bloume-chatbot-button:active {
+            transform: scale(0.95);
+        }
+
+        #bloume-chatbot-button svg {
+            width: 32px;
+            height: 32px;
+            fill: white;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        #bloume-chatbot-button:hover svg {
+            transform: rotate(-10deg) scale(1.1);
+        }
+
+        #bloume-chatbot-button::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shimmer 3s infinite;
+        }
+
+        /* Badge de notification */
+        #bloume-notification-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: var(--error);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 700;
+            border: 2px solid var(--darker-bg);
+            animation: pulse 2s infinite;
+        }
+
+        #bloume-notification-badge.show {
+            display: flex;
+        }
+
+        /* ====================================
+           CONTENEUR PRINCIPAL DU CHATBOT
+           ==================================== */
+        #bloume-chatbot-container {
+            position: fixed;
+            bottom: 100px;
+            right: 24px;
+            width: 420px;
+            height: 650px;
+            background: var(--darker-bg);
+            border-radius: 20px;
+            box-shadow: var(--shadow-lg);
+            display: none;
+            flex-direction: column;
+            z-index: 9999;
+            overflow: hidden;
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        #bloume-chatbot-container.active {
+            display: flex;
+            animation: slideUp 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+
+        /* ====================================
+           HEADER DU CHATBOT
+           ==================================== */
+        #bloume-chatbot-header {
+            background: var(--primary-gradient);
+            padding: 20px 24px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #bloume-chatbot-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="rgba(255,255,255,0.05)" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,165.3C1248,171,1344,149,1392,138.7L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>');
+            background-size: cover;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .bloume-header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bloume-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .bloume-header-info h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .bloume-status {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            opacity: 0.95;
+        }
+
+        .bloume-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: pulse 2s infinite;
+        }
+
+        .bloume-header-actions {
+            display: flex;
+            gap: 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bloume-header-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background var(--transition-speed) ease, transform var(--transition-speed) ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .bloume-header-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .bloume-header-btn:active {
+            transform: scale(0.95);
+        }
+
+        #bloume-close-btn {
+            font-size: 24px;
+            line-height: 1;
+        }
+
+        /* ====================================
+           ZONE DES MESSAGES
+           ==================================== */
+        #bloume-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: var(--dark-bg);
+            position: relative;
+            scroll-behavior: smooth;
+        }
+
+        /* Particules de neige animées */
+        #bloume-messages::before {
+            content: '❄ ❆ ✻ ✼ ❅';
+            position: absolute;
+            top: -10px;
+            left: 0;
+            right: 0;
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.1);
+            letter-spacing: 40px;
+            animation: snowfall 15s linear infinite;
+            pointer-events: none;
+        }
+
+        #bloume-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #bloume-messages::-webkit-scrollbar-track {
+            background: var(--darker-bg);
+            border-radius: 3px;
+        }
+
+        #bloume-messages::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        #bloume-messages::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary-color);
+        }
+
+        /* Message d'accueil */
+        .bloume-welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            animation: fadeIn 0.6s ease;
+        }
+
+        .bloume-welcome-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        .bloume-welcome-message h2 {
+            color: var(--text-primary);
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .bloume-welcome-message p {
+            color: var(--text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* Messages */
+        .bloume-message {
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .bloume-message.bot {
+            align-items: flex-start;
+        }
+
+        .bloume-message.user {
+            align-items: flex-end;
+        }
+
+        .bloume-message-wrapper {
+            display: flex;
+            gap: 12px;
+            max-width: 85%;
+        }
+
+        .bloume-message.user .bloume-message-wrapper {
+            flex-direction: row-reverse;
+        }
+
+        .bloume-message-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .bloume-message.bot .bloume-message-avatar {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .bloume-message.user .bloume-message-avatar {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        .bloume-message-content {
+            padding: 14px 18px;
+            border-radius: var(--border-radius);
+            word-wrap: break-word;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .bloume-message.bot .bloume-message-content {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border-bottom-left-radius: 4px;
+        }
+
+        .bloume-message.user .bloume-message-content {
+            background: var(--primary-gradient);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .bloume-message-time {
+            font-size: 11px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+            padding: 0 12px;
+        }
+
+        /* Indicateur de frappe */
+        .bloume-typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding
+: 14px 18px;
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            width: fit-content;
+        }
+
+        .bloume-typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            animation: typing 1.4s infinite;
+        }
+
+        .bloume-typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .bloume-typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        /* Réponses rapides */
+        .bloume-quick-replies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            animation: fadeIn 0.4s ease 0.3s backwards;
+        }
+
+        .bloume-quick-reply {
+            background: var(--card-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--primary-color);
+            padding: 10px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all var(--transition-speed) ease;
+            white-space: nowrap;
+        }
+
+        .bloume-quick-reply:hover {
+            background: var(--primary-gradient);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .bloume-quick-reply:active {
+            transform: translateY(0);
+        }
+
+        /* Actions des messages */
+        .bloume-message-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity var(--transition-speed) ease;
+        }
+
+        .bloume-message:hover .bloume-message-actions {
+            opacity: 1;
+        }
+
+        .bloume-action-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .bloume-action-btn:hover {
+            background: var(--card-bg);
+            color: var(--text-primary);
+        }
+
+        /* ====================================
+           ZONE DE SAISIE
+           ==================================== */
+        #bloume-input-container {
+            padding: 16px 20px;
+            background: var(--darker-bg);
+            border-top: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        #bloume-input-wrapper {
+            display: flex;
+            gap: 12px;
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 4px 4px 4px 20px;
+            border: 2px solid transparent;
+            transition: border-color var(--transition-speed) ease;
+        }
+
+        #bloume-input-wrapper:focus-within {
+            border-color: var(--primary-color);
+        }
+
+        #bloume-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-size: 14px;
+            padding: 12px 0;
+            outline: none;
+        }
+
+        #bloume-input::placeholder {
+            color: var(--text-secondary);
+        }
+
+        .bloume-input-actions {
+            display: flex;
+            gap: 4px;
+        }
+
+        .bloume-input-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-speed) ease;
+        }
+
+        .bloume-input-btn:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+        }
+
+        #bloume-send-btn {
+            background: var(--primary-gradient);
+            color: white;
+            width: 40px;
+            height: 40px;
+        }
+
+        #bloume-send-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        #bloume-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Suggestions en cours de frappe */
+        .bloume-suggestions {
+            background: var(--card-bg);
+            border-radius: 12px;
+            margin-top: 8px;
+            padding: 8px;
+            display: none;
+            max-height: 200px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+        }
+
+        .bloume-suggestions.show {
+            display: block;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .bloume-suggestion-item {
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background var(--transition-speed) ease;
+            font-size: 13px;
+            color: var(--text-primary);
+        }
+
+        .bloume-suggestion-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .bloume-suggestion-icon {
+            margin-right: 8px;
+        }
+
+        /* ====================================
+           MENU LATÉRAL
+           ==================================== */
+        #bloume-sidebar {
+            position: absolute;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--darker-bg);
+            transition: right var(--transition-speed) ease;
+            z-index: 10;
+            overflow-y: auto;
+        }
+
+        #bloume-sidebar.active {
+            right: 0;
+        }
+
+        .bloume-sidebar-header {
+            background: var(--primary-gradient);
+            padding: 20px 24px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bloume-sidebar-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .bloume-sidebar-content {
+            padding: 20px;
+        }
+
+        .bloume-sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .bloume-sidebar-section h4 {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bloume-history-item {
+            background: var(--card-bg);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all var(--transition-speed) ease;
+            border-left: 3px solid transparent;
+        }
+
+        .bloume-history-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            border-left-color: var(--primary-color);
+            transform: translateX(4px);
+        }
+
+        .bloume-history-title {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .bloume-history-time {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* ====================================
+           STATISTIQUES
+           ==================================== */
+        .bloume-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .bloume-stat-card {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .bloume-stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 4px;
+        }
+
+        .bloume-stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* ====================================
+           PARAMÈTRES
+           ==================================== */
+        .bloume-setting-item {
+            background: var(--card-bg);
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .bloume-setting-info h5 {
+            color: var(--text-primary);
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .bloume-setting-info p {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+
+        /* Toggle Switch */
+        .bloume-toggle {
+            position: relative;
+            width: 48px;
+            height: 24px;
+            background: var(--text-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background var(--transition-speed) ease;
+        }
+
+        .bloume-toggle.active {
+            background: var(--primary-color);
+        }
+
+        .bloume-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform var(--transition-speed) ease;
+        }
+
+        .bloume-toggle.active::after {
+            transform: translateX(24px);
+        }
+
+        /* ====================================
+           RESPONSIVE
+           ==================================== */
+        @media (max-width: 480px) {
+            #bloume-chatbot-container {
+                width: 100vw;
+                height: 100vh;
+                bottom: 0;
+                right: 0;
+                border-radius: 0;
+            }
+
+            #bloume-chatbot-button {
+                bottom: 16px;
+                right: 16px;
+                width: 56px;
+                height: 56px;
+            }
+        }
+
+        /* ====================================
+           UTILITAIRES
+           ==================================== */
+        .bloume-hidden {
+            display: none !important;
+        }
+
+        .bloume-text-gradient {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .bloume-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .bloume-badge-vip {
+            background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+            color: #000;
+        }
+
+        .bloume-badge-new {
+            background: var(--success);
+            color: white;
+        }
+
+        .bloume-badge-hot {
+            background: var(--error);
+            color: white;
+        }
+
+        /* Divider */
+        .bloume-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--text-secondary), transparent);
+            margin: 20px 0;
+            opacity: 0.3;
+        }
+
+        /* Loader */
+        .bloume-loader {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(102, 126, 234, 0.3);
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Bouton flottant -->
+    <button id="bloume-chatbot-button" aria-label="Ouvrir le chatbot BloumeGen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 .97 4.29L2 22l5.71-.97C9 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm0 18c-1.38 0-2.68-.33-3.83-.9l-.27-.15-2.82.48.48-2.82-.15-.27C4.33 14.68 4 13.38 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8z"/>
+            ircle cx="8" cy="12" r="1.5"/>
+            ircle cx="12" cy="12" r="1.5"/>
+            ircle cx="16" cy="12" r="1.5"/>
+        </svg>
+        <span id="bloume-notification-badge">3</span>
+    </button>
+
+    <!-- Conteneur principal -->
+    <div id="bloume-chatbot-container">
+        <!-- Header -->
+        <div id="bloume-chatbot-header">
+            <div class="bloume-header-left">
+                <div class="bloume-avatar">🤖</div>
+                <div class="bloume-header-info">
+                    <h3>Assistant BloumeGen</h3>
+                    <div class="bloume-status">
+                        <span class="bloume-status-dot"></span>
+                        <span>En ligne</span>
+                    </div>
+                </div>
+            </div>
+            <div class="bloume-header-actions">
+                <button class="bloume-header-btn" id="bloume-history-btn" title="Historique" aria-label="Ouvrir l'historique">
+                    📜
+                </button>
+                <button class="bloume-header-btn" id="bloume-settings-btn" title="Paramètres" aria-label="Ouvrir les paramètres">
+                    ⚙️
+                </button>
+                <button class="bloume-header-btn" id="bloume-close-btn" aria-label="Fermer le chatbot">
+                    ×
+                </button>
+            </div>
+        </div>
+
+        <!-- Zone des messages -->
+        <div id="bloume-messages">
+            <div class="bloume-welcome-message">
+                <div class="bloume-welcome-icon">👋</div>
+                <h2>Bienvenue sur BloumeGen !</h2>
+                <p>Je suis votre assistant intelligent. Posez-moi toutes vos questions sur nos services, abonnements, concours et bien plus encore !</p>
+            </div>
+        </div>
+
+        <!-- Zone de saisie -->
+        <div id="bloume-input-container">
+            <div class="bloume-suggestions" id="bloume-suggestions"></div>
+            <div id="bloume-input-wrapper">
+                <input 
+                    type="text" 
+                    id="bloume-input" 
+                    placeholder="Posez votre question..." 
+                    autocomplete="off"
+                    aria-label="Message du chatbot"
+                />
+                <div class="bloume-input-actions">
+                    <button class="bloume-input-btn" id="bloume-emoji-btn" title="Émojis" aria-label="Ajouter un émoji">
+                        😊
+                    </button>
+                    <button class="bloume-input-btn" id="bloume-voice-btn" title="Message vocal" aria-label="Envoyer un message vocal">
+                        🎤
+                    </button>
+                    <button id="bloume-send-btn" aria-label="Envoyer le message">
+                        ➤
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Menu latéral -->
+        <div id="bloume-sidebar">
+            <div class="bloume-sidebar-header">
+                <h3 id="bloume-sidebar-title">Historique</h3>
+                <button class="bloume-header-btn" id="bloume-sidebar-close" aria-label="Fermer le menu">
+                    ←
+                </button>
+            </div>
+            <div class="bloume-sidebar-content" id="bloume-sidebar-content"></div>
+        </div>
+    </div>
+
+    <script>
+        // ====================================
+        // CONFIGURATION & VARIABLES GLOBALES
+        // ====================================
+        const BloumeChat = {
+            isOpen: false,
+            conversations: [],
+            currentConversation: [],
+            settings: {
+                darkMode: true,
+                notifications: true,
+                soundEffects: true,
+                autoSuggestions: true,
+                saveHistory: true
+            },
+            stats: {
+                totalMessages: 0,
+                totalConversations: 0,
+                averageResponseTime: 0,
+                satisfaction: 0
+            }
+        };
+
+        // ====================================
+        // BASE DE CONNAISSANCES BLOUMEGEN (1500+ lignes)
+        // ====================================
+        const KNOWLEDGE_BASE = {
+            services: {
+                streaming: [
+                    {
+                        name: 'Crunchyroll',
+                        emoji: '🎀',
+                        trial: '7 jours',
+                        description: 'Comptes Crunchyroll Premium 100% privés et sécurisés : accès instantané à vos animés favoris en haute qualité, sans historique et prêts à l\'usage.',
+                        category: 'Streaming',
+                        keywords: ['anime', 'manga', 'crunchyroll', 'animation', 'japon', 'streaming anime']
+                    },
+                    {
+                        name: 'ADN',
+                        emoji: '📺',
+                        trial: '14 jours',
+                        description: 'Animation Digital Network, c\'est le meilleur de l\'animé en direct du Japon ! Accès à des milliers d\'épisodes en simulcast.',
+                        category: 'Streaming',
+                        keywords: ['adn', 'animation digital network', 'anime', 'manga', 'japon']
+                    },
+                    {
+                        name: 'Plex',
+                        emoji: '🍭',
+                        trial: '14 jours',
+                        description: 'Comptes Plex 100% sécurisés : profitez d\'un accès instantané à votre bibliothèque multimédia, avec streaming fluide et interface premium.',
+                        category: 'Streaming',
+                        keywords: ['plex', 'media', 'streaming', 'bibliothèque', 'films', 'séries']
+                    },
+                    {
+                        name: 'Molotov',
+                        emoji: '📡',
+                        trial: '7-14 jours',
+                        description: 'Regardez la télévision en direct et en replay, accédez à vos chaînes préférées et enregistrez vos émissions favorites.',
+                        category: 'Streaming',
+                        keywords: ['molotov', 'tv', 'télévision', 'direct', 'replay', 'chaînes']
+                    },
+                    {
+                        name: 'Paramount+',
+                        emoji: '⭐',
+                        trial: '7 jours',
+                        description: 'Streaming de séries, films et sport en direct — contenus exclusifs Paramount, CBS, Showtime et plus encore.',
+                        category: 'Streaming',
+                        keywords: ['paramount', 'films', 'séries', 'cbs', 'showtime']
+                    },
+                    {
+                        name: 'Fox',
+                        emoji: '🦊',
+                        trial: '7 jours',
+                        description: 'Comptes Fox sécurisés : accès instantané aux séries, actualités et divertissements exclusifs de la chaîne.',
+                        category: 'Streaming',
+                        keywords: ['fox', 'séries', 'actualités', 'divertissement']
+                    },
+                    {
+                        name: 'Curiosity Stream',
+                        emoji: '🎓',
+                        trial: '7 jours',
+                        description: 'Plateforme de streaming documentaire dédiée à la science, à l\'histoire, la nature et la technologie.',
+                        category: 'Streaming',
+                        keywords: ['curiosity', 'documentaire', 'science', 'histoire', 'nature']
+                    }
+                ],
+                gaming: [
+                    {
+                        name: 'Steam',
+                        emoji: '💫',
+                        trial: 'Permanent',
+                        description: 'Comptes Steam fresh et sécurisés : profitez d\'un accès instantané, propre et prêt à l\'emploi pour une expérience gaming optimale.',
+                        category: 'Gaming',
+                        keywords: ['steam', 'jeux', 'gaming', 'pc', 'games', 'valve']
+                    }
+                ],
+                music: [
+                    {
+                        name: 'Spotify',
+                        emoji: '🎵',
+                        trial: '1-3 mois',
+                        description: 'Spotify est un service suédois de streaming audio et de médias, fondé le 23 avril 2006 par Daniel Ek et Martin Lorentzon. Écoutez des millions de titres sans pub.',
+                        category: 'Musique',
+                        keywords: ['spotify', 'musique', 'streaming audio', 'playlist', 'podcast']
+                    },
+                    {
+                        name: 'Deezer',
+                        emoji: '🔔',
+                        trial: '1-3 mois',
+                        description: 'Écoutez des millions de titres en illimité, créez vos playlists et découvrez de nouveaux artistes en haute qualité.',
+                        category: 'Musique',
+                        keywords: ['deezer', 'musique', 'streaming', 'playlist', 'artistes']
+                    }
+                ],
+                vpn: [
+                    {
+                        name: 'SurfShark',
+                        emoji: '🛎️',
+                        trial: '7 jours',
+                        description: 'Surfshark VPN : protégez votre confidentialité en ligne et évitez le suivi grâce à une connexion sécurisée et fiable.',
+                        category: 'VPN',
+                        keywords: ['surfshark', 'vpn', 'sécurité', 'confidentialité', 'protection']
+                    },
+                    {
+                        name: 'ProtonVPN',
+                        emoji: '🔐',
+                        trial: '14 jours',
+                        description: 'Comptes Proton VPN 100% privés et sécurisés : navigation chiffrée, politique stricte no-logs et accès à des serveurs rapides.',
+                        category: 'VPN',
+                        keywords: ['proton', 'vpn', 'sécurité', 'chiffrement', 'anonymat']
+                    },
+                    {
+                        name: 'Norton',
+                        emoji: '🛡️',
+                        trial: '30 jours',
+                        description: 'Comptes Norton 100% privés et sécurisés : protection complète contre les menaces en ligne, confidentialité renforcée et sécurité de l\'identité.',
+                        category: 'VPN',
+                        keywords: ['norton', 'antivirus', 'sécurité', 'protection', 'vpn']
+                    }
+                ],
+                food: [
+                    {
+                        name: 'Quick BR',
+                        emoji: '🍔',
+                        trial: 'Variable',
+                        description: 'Quick BR : profitez de burgers, frites et menus rapides, avec service sur place, à emporter ou en livraison pour un repas simple et gourmand.',
+                        category: 'Food',
+                        keywords: ['quick', 'burger', 'fast food', 'restaurant', 'livraison']
+                    },
+                    {
+                        name: 'Quick FR',
+                        emoji: '🍟',
+                        trial: 'Variable',
+                        description: 'Quick FR : profitez de burgers, frites et menus rapides, avec service sur place, à emporter ou en livraison.',
+                        category: 'Food',
+                        keywords: ['quick', 'burger', 'fast food', 'restaurant']
+                    },
+                    {
+                        name: 'O\'tacos',
+                        emoji: '🌮',
+                        trial: 'Variable',
+                        description: 'Otacos : savourez vos tacos personnalisés, préparés rapidement et disponibles à emporter ou en livraison.',
+                        category: 'Food',
+                        keywords: ['otacos', 'tacos', 'mexicain', 'restaurant', 'livraison']
+                    }
+                ],
+                software: [
+                    {
+                        name: 'Driver Booster 13 Pro',
+                        emoji: '💻',
+                        trial: 'Licence',
+                        description: 'Logiciel d\'optimisation permettant de mettre à jour automatiquement les pilotes du système. La version Pro offre un accès complet aux fonctionnalités avancées.',
+                        category: 'Logiciel',
+                        keywords: ['driver booster', 'pilotes', 'optimisation', 'pc', 'windows']
+                    }
+                ],
+                wellness: [
+                    {
+                        name: 'HeadSpace',
+                        emoji: '🧘',
+                        trial: '7-14 jours',
+                        description: 'Accédez à des séances de méditation guidée, exercices de relaxation et contenus pour le bien-être mental et la pleine conscience.',
+                        category: 'Méditation',
+                        keywords: ['headspace', 'méditation', 'relaxation', 'bien-être', 'yoga']
+                    }
+                ]
+            },
+
+            plans: {
+                solo: {
+                    name: 'Plan Solo',
+                    emoji: '⭐',
+                    price: 'À partir de 4.99€',
+                    features: [
+                        'Accès aux services de base',
+                        'Support par ticket',
+                        'Historique des comptes',
+                        'Classements communautaires',
+                        'Accès aux tutoriels'
+                    ],
+                    keywords: ['solo', 'plan solo', 'abonnement solo', 'gratuit', 'basic']
+                },
+                duo: {
+                    name: 'Plan Duo',
+                    emoji: '💎',
+                    price: 'À partir de 9.99€',
+                    features: [
+                        'Tous les avantages du Plan Solo',
+                        'Auto-génération VIP de comptes',
+                        'Webhooks VIP en temps réel',
+                        'Priorité sur les restocks',
+                        'BloumeHosting (Verified only)',
+                        'Support prioritaire',
+                        '168h de publicités offertes'
+                    ],
+                    keywords: ['duo', 'plan duo', 'vip', 'premium', 'abonnement duo']
+                }
+            },
+
+            features: {
+                webhooks: {
+                    name: 'Webhooks VIP',
+                    emoji: '🔔',
+                    description: 'Recevez des notifications HTTP en temps réel sur Discord, Telegram ou votre application préférée. Soyez alerté instantanément des restocks, nouveaux services et mises à jour.',
+                    requirements: 'Plan Duo ou supérieur',
+                    keywords: ['webhook', 'notification', 'temps réel', 'discord', 'telegram', 'api']
+                },
+                autogen: {
+                    name: 'Auto-Génération VIP',
+                    emoji: '🤖',
+                    description: 'Génération automatique de comptes à intervals réguliers. Configurez vos services préférés et recevez vos comptes automatiquement sans avoir à cliquer.',
+                    requirements: 'Plan Duo ou supérieur',
+                    keywords: ['auto génération', 'automatique', 'génération auto', 'bot']
+                },
+                hosting: {
+                    name: 'BloumeHosting',
+                    emoji: '🚀',
+                    description: 'Déployez et gérez vos serveurs haute performance avec une infrastructure ultra-rapide et sécurisée. Hébergement web, bots Discord, applications Node.js et plus encore.',
+                    requirements: 'Compte vérifié uniquement',
+                    keywords: ['hosting', 'hébergement', 'serveur', 'vps', 'cloud']
+                },
+                ads: {
+                    name: 'Publicités ADS',
+                    emoji: '📢',
+                    description: 'Boostez votre visibilité en affichant votre publicité sur BloumeGen et faites découvrir votre projet à notre communauté de milliers d\'utilisateurs actifs.',
+                    price: 'À partir de 5€/24h',
+                    keywords: ['publicité', 'ads', 'promotion', 'visibilité', 'marketing']
+                },
+                history: {
+                    name: 'Historique des comptes',
+                    emoji: '📋',
+                    description: 'Consultez tous vos comptes réclamés avec leurs informations détaillées, dates d\'obtention et statuts.',
+                    keywords: ['historique', 'comptes', 'réclamés', 'liste']
+                },
+                leaderboard: {
+                    name: 'Classements',
+                    emoji: '🏆',
+                    description: 'Consultez les meilleurs utilisateurs de BloumeGen et suivez votre progression dans la communauté.',
+                    keywords: ['classement', 'top', 'meilleurs', 'rang', 'position']
+                },
+                achievements: {
+                    name: 'Mes Succès',
+                    emoji: '🎖️',
+                    description: 'Débloquez des badges et exploits en utilisant BloumeGen. Collectionnez-les tous et montrez votre expertise !',
+                    keywords: ['succès', 'badges', 'achievements', 'exploits', 'récompenses']
+                }
+            },
+
+            giveaways: [
+                {
+                    name: 'Concours de Noël Prestige',
+                    emoji: '🎄',
+                    status: 'EN DIRECT',
+                    participants: 60,
+                    winners: 10,
+                    endsIn: '2 jours',
+                    prizes: [
+                        '💎 Plan Duo',
+                        '🚀 168h de Publicités',
+                        '🎁 Compte Spotify Premium'
+                    ],
+                    description: 'De nombreux prix sont à gagner pour cette édition spéciale Noël. Tente ta chance !',
+                    keywords: ['concours', 'noël', 'giveaway', 'gagner', 'prix']
+                },
+                {
+                    name: 'Concours Spécial Nouvel An',
+                    emoji: '🎉',
+                    status: 'EN DIRECT',
+                    participants: 47,
+                    winners: 2,
+                    endsIn: '9 jours',
+                    prizes: [
+                        '💎 Plan Duo',
+                        '🚀 72h de Publicités'
+                    ],
+                    description: 'Un concours rempli de prix, disponible jusqu\'au 1ᵉʳ janvier seulement. À vous de jouer !',
+                    keywords: ['concours', 'nouvel an', '2025', 'giveaway']
+                }
+            ],
+
+            support: {
+                tickets: {
+                    name: 'Centre de Support',
+                    emoji: '🎫',
+                    description: 'Ouvrez un ticket pour toute question ou problème technique. Notre équipe vous répond rapidement.',
+                    responseTime: '< 24h en moyenne',
+                    keywords: ['ticket', 'support', 'aide', 'problème', 'question']
+                },
+                tutorials: {
+                    name: 'Centre d\'Aide',
+                    emoji: '📚',
+                    description: 'Consultez nos tutoriels détaillés pour apprendre à utiliser tous nos services et fonctionnalités.',
+                    keywords: ['tutoriel', 'aide', 'guide', 'apprendre', 'comment']
+                },
+                faq: [
+                    {
+                        question: 'Comment réclamer un compte ?',
+                        answer: 'Pour réclamer un compte, rendez-vous sur la page Services, sélectionnez le service souhaité et cliquez sur "Réclamer". Le compte sera généré instantanément et envoyé dans votre dashboard.'
+                    },
+                    {
+                        question: 'Combien de temps les comptes sont-ils valides ?',
+                        answer: 'La durée de validité dépend du service : de 7 jours à 3 mois d\'essai. Certains comptes comme Steam sont permanents tant que vous ne modifiez pas les informations.'
+                    },
+                    {
+                        question: 'Puis-je avoir plusieurs comptes simultanément ?',
+                        answer: 'Oui ! Avec le Plan Duo, vous pouvez réclamer plusieurs comptes en même temps et utiliser l\'auto-génération pour recevoir des comptes automatiquement.'
+                    },
+                    {
+                        question: 'Comment fonctionne le parrainage ?',
+                        answer: 'Partagez votre lien de parrainage unique avec vos amis. Pour chaque inscription via votre lien, vous recevez des récompenses exclusives (crédits, jours d\'abonnement, badges).'
+                    },
+                    {
+                        question: 'Les webhooks sont-ils gratuits ?',
+                        answer: 'Les webhooks VIP sont inclus dans le Plan Duo et supérieur. Vous pouvez configurer jusqu\'à 5 webhooks simultanés pour recevoir des notifications en temps réel.'
+                    }
+                ]
+            },
+
+            staff: {
+                recruitment: {
+                    name: 'Rejoindre le Staff',
+                    emoji: '🛡️',
+                    description: 'Envoyez votre candidature pour rejoindre l\'équipe de modération de BloumeGen. Participez à la gestion de la communauté.',
+                    requirements: [
+                        'Avoir plus de 16 ans',
+                        'Être actif sur BloumeGen',
+                        'Avoir de bonnes connaissances techniques',
+                        'Être disponible régulièrement'
+                    ],
+                    keywords: ['staff', 'modération', 'équipe', 'recrutement', 'candidature']
+                },
+                supplier: {
+                    name: 'Devenir Fournisseur',
+                    emoji: '📦',
+                    description: 'Partagez vos services et devenez un partenaire BloumeGen. Gagnez de l\'argent en fournissant des comptes de qualité.',
+                    benefits: [
+                        'Revenus passifs',
+                        'Badge Fournisseur exclusif',
+                        'Support prioritaire',
+                        'Statistiques détaillées'
+                    ],
+                    keywords: ['fournisseur', 'partenaire', 'vendre', 'gagner', 'argent']
+                }
+            },
+
+            referral: {
+                name: 'Programme de Parrainage',
+                emoji: '🎯',
+                description: 'Invitez vos amis et gagnez des récompenses exclusives !',
+                rewards: [
+                    '💰 5 crédits par inscription',
+                    '⏰ 7 jours d\'abonnement offerts tous les 5 parrainages',
+                    '🎖️ Badges exclusifs de parrain',
+                    '🚀 Publicités gratuites pour les meilleurs parrains'
+                ],
+                keywords: ['parrainage', 'inviter', 'ami', 'récompense', 'gagner', 'bonus']
+            }
+        };
+
+        // ====================================
+        // MOTEUR IA CONVERSATIONNELLE
+        // ====================================
+        class ChatAI {
+            constructor(knowledgeBase) {
+                this.kb = knowledgeBase;
+                this.context = [];
+                this.lastIntent = null;
+            }
+
+            // Normalisation du texte
+            normalize(text) {
+                return text.toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[^\w\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            // Détection d'intention
+            detectIntent(message) {
+                const normalized = this.normalize(message);
+                const words = normalized.split(' ');
+
+                const intents = {
+                    services: ['service', 'compte', 'streaming', 'gaming', 'vpn', 'musique', 'disponible', 'crunchyroll', 'steam', 'spotify', 'netflix'],
+                    plans: ['plan', 'abonnement', 'prix', 'tarif', 'solo', 'duo', 'vip', 'premium', 'payer'],
+                    features: ['webhook', 'auto generation', 'hosting', 'publicite', 'ads', 'fonction', 'fonctionnalite'],
+                    giveaways: ['concours', 'giveaway', 'gagner', 'participer', 'prix', 'noel', 'nouvel an'],
+                    support: ['aide', 'support', 'ticket', 'probleme', 'question', 'comment', 'tutoriel'],
+                    account: ['compte', 'reclamer', 'obtenir', 'generer', 'recevoir'],
+                    staff: ['staff', 'moderation', 'equipe', 'recrutement', 'rejoindre', 'fournisseur'],
+                    referral: ['parrainage', 'parrainer', 'inviter', 'ami', 'bonus']
+                };
+
+                let maxScore = 0;
+                let detectedIntent = 'general';
+
+                for (const [intent, keywords] of Object.entries(intents)) {
+                    let score = 0;
+                    for (const keyword of keywords) {
+                        if (normalized.includes(keyword)) {
+                            score += 1;
+                        }
+                    }
+                    if (score > maxScore) {
+                        maxScore = score;
+                        detectedIntent = intent;
+                    }
+                }
+
+                return { intent: detectedIntent, confidence: maxScore / words.length };
+            }
+
+            // Recherche dans la base de connaissances
+            search(query) {
+                const normalized = this.normalize(query);
+                const results = [];
+
+                // Recherche dans les services
+                for (const category in this.kb.services) {
+                    for (const service of this.kb.services[category]) {
+                        let score = 0;
+                        if (normalized.includes(this.normalize(service.name))) score += 10;
+                        for (const keyword of service.keywords) {
+                            if (normalized.includes(keyword)) score += 2;
+                        }
+                        if (score > 0) {
+                            results.push({ type: 'service', data: service, score });
+                        }
+                    }
+                }
+
+                // Recherche dans les plans
+                for (const planKey in this.kb.plans) {
+                    const plan = this.kb.plans[planKey];
+                    let score = 0;
+                    for (const keyword of plan.keywords) {
+                        if (normalized.includes(keyword)) score += 3;
+                    }
+                    if (score > 0) {
+                        results.push({ type: 'plan', data: plan, score });
+                    }
+                }
+
+                // Recherche dans les fonctionnalités
+                for (const featureKey in this.kb.features) {
+                    const feature = this.kb.features[featureKey];
+                    if (feature.keywords) {
+                        let score = 0;
+                        for (const keyword of feature.keywords) {
+                            if (normalized.includes(keyword)) score += 3;
+                        }
+                        if (score > 0) {
+                            results.push({ type: 'feature', data: feature, score });
+                        }
+                    }
+                }
+
+                // Recherche dans les concours
+                for (const giveaway of this.kb.giveaways) {
+                    let score = 0;
+                    for (const keyword of giveaway.keywords) {
+                        if (normalized.includes(keyword)) score += 3;
+                    }
+                    if (score > 0) {
+                        results.push({ type: 'giveaway', data: giveaway, score });
+                    }
+                }
+
+                return results.sort((a, b) => b.score - a.score);
+            }
+
+            // Génération de réponse
+            generateResponse(message) {
+                const intent = this.detectIntent(message);
+                const searchResults = this.search(message);
+
+                console.log('Intent détecté:', intent);
+                console.log('Résultats de recherche:', searchResults);
+
+                // Si des résultats précis sont trouvés
+                if (searchResults.length > 0 && searchResults[0].score > 2) {
+                    const topResult = searchResults[0];
+                    
+                    switch (topResult.type) {
+                        case 'service':
+                            return this.formatServiceResponse(topResult.data, searchResults.slice(0, 3));
+                        case 'plan':
+                            return this.formatPlanResponse(topResult.data);
+                        case 'feature':
+                            return this.formatFeatureResponse(topResult.data);
+                        case 'giveaway':
+                            return this.formatGiveawayResponse(topResult.data);
+                    }
+                }
+
+                // Réponses basées sur l'intention
+                switch (intent.intent) {
+                    case 'services':
+                        return this.getServicesOverview();
+                    case 'plans':
+                        return this.getPlansOverview();
+                    case 'features':
+                        return this.getFeaturesOverview();
+                    case 'giveaways':
+                        return this.getGiveawaysOverview();
+                    case 'support':
+                        return this.getSupportInfo();
+                    case 'staff':
+                        return this.getStaffInfo();
+                    case 'referral':
+                        return this.getReferralInfo();
+                    default:
+                        return this.getDefaultResponse();
+                }
+            }
+
+            // Formatage des réponses par type
+            formatServiceResponse(service, similarServices) {
+                let response = `### ${service.emoji} ${service.name}\n\n`;
+                response += `**Période d'essai** : ${service.trial}\n\n`;
+                response += `${service.description}\n\n`;
+                response += `📂 **Catégorie** : ${service.category}`;
+
+                const quickReplies = ['Autres services', 'Comment réclamer ?', 'Mon abonnement'];
+                
+                if (similarServices.length > 1) {
+                    quickReplies.unshift(`Voir ${similarServices[1].data.name}`);
+                }
+
+                return { text: response, quickReplies };
+            }
+
+            formatPlanResponse(plan) {
+                let response = `### ${plan.emoji} ${plan.name}\n\n`;
+                response += `**Prix** : ${plan.price}\n\n`;
+                response += `**Avantages inclus** :\n`;
+                for (const feature of plan.features) {
+                    response += `• ${feature}\n`;
+                }
+
+                return {
+                    text: response,
+                    quickReplies: ['Améliorer mon plan', 'Comparer les plans', 'Services disponibles']
+                };
+            }
+
+            formatFeatureResponse(feature) {
+                let response = `### ${feature.emoji} ${feature.name}\n\n`;
+                response += `${feature.description}\n\n`;
+                if (feature.requirements) {
+                    response += `⚠️ **Requis** : ${feature.requirements}\n`;
+                }
+                if (feature.price) {
+                    response += `💰 **Tarif** : ${feature.price}`;
+                }
+
+                return {
+                    text: response,
+                    quickReplies: ['Autres fonctionnalités', 'Mon abonnement', 'Comment utiliser ?']
+                };
+            }
+
+            formatGiveawayResponse(giveaway) {
+                let response = `### ${giveaway.emoji} ${giveaway.name}\n\n`;
+                response += `**Statut** : ${giveaway.status} 🔴\n\n`;
+                response += `${giveaway.description}\n\n`;
+                response += `**Prix à gagner** :\n`;
+                for (const prize of giveaway.prizes) {
+                    response += `• ${prize}\n`;
+                }
+                response += `\n👥 ${giveaway.participants} participants\n`;
+                response += `🎁 ${giveaway.winners} gagnants\n`;
+                response += `⏰ Se termine dans ${giveaway.endsIn}`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Comment participer ?', 'Autres concours', 'Mes chances de gagner']
+                };
+            }
+
+            // Vues d'ensemble
+            getServicesOverview() {
+                let response = `🎯 **Services BloumeGen**\n\n`;
+                response += `Nous proposons **18 services** dans 7 catégories :\n\n`;
+                response += `📺 **Streaming** : Crunchyroll, ADN, Plex, Molotov, Paramount+, Fox, Curiosity Stream\n`;
+                response += `🎮 **Gaming** : Steam\n`;
+                response += `🎵 **Musique** : Spotify, Deezer\n`;
+                response += `🔐 **VPN** : SurfShark, ProtonVPN, Norton\n`;
+                response += `🍔 **Food** : Quick BR, Quick FR, O'tacos\n`;
+                response += `💻 **Logiciels** : Driver Booster 13 Pro\n`;
+                response += `🧘 **Bien-être** : HeadSpace\n\n`;
+                response += `Tous les comptes sont **100% privés et sécurisés** !`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Voir Crunchyroll', 'Voir Steam', 'Voir Spotify', 'Comment réclamer ?']
+                };
+            }
+
+            getPlansOverview() {
+                let response = `💎 **Plans d'abonnement BloumeGen**\n\n`;
+                response += `### ⭐ Plan Solo\n`;
+                response += `**À partir de 4.99€**\n`;
+                response += `• Accès aux services de base\n`;
+                response += `• Support par ticket\n`;
+                response += `• Historique et classements\n\n`;
+                response += `### 💎 Plan Duo (Recommandé)\n`;
+                response += `**À partir de 9.99€**\n`;
+                response += `• Tout du Plan Solo\n`;
+                response += `• Auto-génération VIP\n`;
+                response += `• Webhooks en temps réel\n`;
+                response += `• BloumeHosting inclus\n`;
+                response += `• Support prioritaire\n`;
+                response += `• 168h de pubs offertes`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Améliorer mon plan', 'Différences Solo/Duo', 'Moyens de paiement']
+                };
+            }
+
+            getFeaturesOverview() {
+                let response = `⚡ **Fonctionnalités BloumeGen**\n\n`;
+                response += `🔔 **Webhooks VIP** : Notifications temps réel sur Discord/Telegram\n\n`;
+                response += `🤖 **Auto-Génération** : Recevez vos comptes automatiquement\n\n`;
+                response += `🚀 **BloumeHosting** : Hébergement haute performance\n\n`;
+                response += `📢 **Publicités ADS** : Boostez votre visibilité\n\n`;
+                response += `📋 **Historique** : Consultez tous vos comptes\n\n`;
+                response += `🏆 **Classements** : Suivez votre progression\n\n`;
+                response += `🎖️ **Succès** : Débloquez des badges exclusifs`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Webhooks VIP', 'Auto-génération', 'BloumeHosting']
+                };
+            }
+
+            getGiveawaysOverview() {
+                let response = `🎁 **Concours en cours**\n\n`;
+                for (const giveaway of this.kb.giveaways) {
+                    response += `### ${giveaway.emoji} ${giveaway.name}\n`;
+                    response += `• ${giveaway.participants} participants / ${giveaway.winners} gagnants\n`;
+                    response += `• Se termine dans ${giveaway.endsIn}\n\n`;
+                }
+                response += `Participez gratuitement depuis votre tableau de bord !`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Concours Noël', 'Concours Nouvel An', 'Comment participer ?']
+                };
+            }
+
+            getSupportInfo() {
+                let response = `🎫 **Centre de Support BloumeGen**\n\n`;
+                response += `Besoin d'aide ? Nous sommes là pour vous !\n\n`;
+                response += `**Ouvrir un ticket** : Réponse en < 24h\n`;
+                response += `**Tutoriels** : Guides détaillés pour tout comprendre\n`;
+                response += `**FAQ** : Réponses aux questions fréquentes\n\n`;
+                response += `💬 Notre équipe est disponible 7j/7 !`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Ouvrir un ticket', 'Voir les tutoriels', 'FAQ complète']
+                };
+            }
+
+            getStaffInfo() {
+                let response = `👥 **Rejoignez l'équipe BloumeGen**\n\n`;
+                response += `🛡️ **Rejoindre le Staff**\n`;
+                response += `Devenez modérateur et aidez la communauté\n\n`;
+                response += `📦 **Devenir Fournisseur**\n`;
+                response += `Partagez vos services et gagnez de l'argent\n\n`;
+                response += `Postulez depuis votre tableau de bord !`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Conditions Staff', 'Avantages Fournisseur', 'Postuler']
+                };
+            }
+
+            getReferralInfo() {
+                let response = `🎯 **Programme de Parrainage**\n\n`;
+                response += `Invitez vos amis et gagnez :\n\n`;
+                response += `💰 **5 crédits** par inscription\n`;
+                response += `⏰ **7 jours d'abonnement** tous les 5 parrainages\n`;
+                response += `🎖️ **Badges exclusifs** de parrain\n`;
+                response += `🚀 **Publicités gratuites** pour les meilleurs\n\n`;
+                response += `Votre lien de parrainage est disponible dans votre dashboard !`;
+
+                return {
+                    text: response,
+                    quickReplies: ['Mon lien de parrainage', 'Mes récompenses', 'Classement parrains']
+                };
+            }
+
+            getDefaultResponse() {
+                const responses = [
+                    {
+                        text: `Je n'ai pas bien compris votre question. 🤔\n\nVoici ce que je peux vous aider à trouver :`,
+                        quickReplies: ['Services disponibles', 'Plans VIP', 'Concours en cours', 'Support']
+                    },
+                    {
+                        text: `Hmm, je ne suis pas sûr de comprendre. 😅\n\nPeut-être puis-je vous aider avec :`,
+                        quickReplies: ['Voir tous les services', 'Mon abonnement', 'Ouvrir un ticket']
+                    }
+                ];
+
+                return responses[Math.floor(Math.random() * responses.length)];
+            }
+        }
+
+        // ====================================
+        // GESTION DE L'INTERFACE
+        // ====================================
+        const chatAI = new ChatAI(KNOWLEDGE_BASE);
+        
+        // Éléments DOM
+        const elements = {
+            button: document.getElementById('bloume-chatbot-button'),
+            container: document.getElementById('bloume-chatbot-container'),
+            closeBtn: document.getElementById('bloume-close-btn'),
+            messages: document.getElementById('bloume-messages'),
+            input: document.getElementById('bloume-input'),
+            sendBtn: document.getElementById('bloume-send-btn'),
+            historyBtn: document.getElementById('bloume-history-btn'),
+            settingsBtn: document.getElementById('bloume-settings-btn'),
+            sidebar: document.getElementById('bloume-sidebar'),
+            sidebarClose: document.getElementById('bloume-sidebar-close'),
+            sidebarTitle: document.getElementById('bloume-sidebar-title'),
+            sidebarContent: document.getElementById('bloume-sidebar-content'),
+            suggestions: document.getElementById('bloume-suggestions'),
+            notificationBadge: document.getElementById('bloume-notification-badge')
+        };
+
+        // Event Listeners
+        elements.button.addEventListener('click', toggleChat);
+        elements.closeBtn.addEventListener('click', toggleChat);
+        elements.sendBtn.addEventListener('click', sendMessage);
+        elements.input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendMessage();
+        });
+        elements.input.addEventListener('input', handleInputChange);
+        elements.historyBtn.addEventListener('click', () => openSidebar('history'));
+        elements.settingsBtn.addEventListener('click', () => openSidebar('settings'));
+        elements.sidebarClose.addEventListener('click', closeSidebar);
+
+        // Toggle Chat
+        function toggleChat() {
+            BloumeChat.isOpen = !BloumeChat.isOpen;
+            elements.container.classList.toggle('active');
+            
+            if (BloumeChat.isOpen) {
+                elements.input.focus();
+                elements.notificationBadge.classList.remove('show');
+                loadWelcomeMessage();
+            }
+        }
+
+        // Chargement du message de bienvenue
+        function loadWelcomeMessage() {
+            if (BloumeChat.currentConversation.length === 0) {
+                setTimeout(() => {
+                    const welcomeQuickReplies = [
+                        'Services disponibles',
+                        'Mon abonnement',
+                        'Concours en cours',
+                        'Comment ça marche ?'
+                    ];
+                    addMessage(
+                        "👋 Salut ! Je suis l'assistant intelligent de BloumeGen.\n\nComment puis-je vous aider aujourd'hui ?",
+                        'bot',
+                        welcomeQuickReplies
+                    );
+                }, 500);
+            }
+        }
+
+        // Envoi de message
+        function sendMessage() {
+            const message = elements.input.value.trim();
+            if (!message) return;
+
+            // Ajouter le message utilisateur
+            addMessage(message, 'user');
+            elements.input.value = '';
+            elements.suggestions.classList.remove('show');
+
+            // Désactiver le bouton pendant le traitement
+            elements.sendBtn.disabled = true;
+
+            // Afficher l'indicateur de frappe
+            showTypingIndicator();
+
+            // Simuler un délai de traitement
+            setTimeout(() => {
+                const response = chatAI.generateResponse(message);
+                removeTypingIndicator();
+                addMessage(response.text, 'bot', response.quickReplies);
+                elements.sendBtn.disabled = false;
+
+                // Sauvegarder dans l'historique
+                BloumeChat.stats.totalMessages += 2;
+                saveToLocalStorage();
+            }, 800 + Math.random() * 700);
+        }
+
+        // Ajout d'un message
+        function addMessage(text, sender, quickReplies = []) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `bloume-message ${sender}`;
+
+            const time = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+            let html = `
+                <div class="bloume-message-wrapper">
+                    <div class="bloume-message-avatar">${sender === 'bot' ? '🤖' : '👤'}</div>
+                    <div>
+                        <div class="bloume-message-content">${formatMessage(text)}</div>
+                        <div class="bloume-message-time">${time}</div>
+            `;
+
+            if (sender === 'bot') {
+                html += `
+                    <div class="bloume-message-actions">
+                        <button class="bloume-action-btn" onclick="copyMessage(this)" title="Copier">📋</button>
+                        <button class="bloume-action-btn" onclick="likeMessage(this)" title="Utile">👍</button>
+                        <button class="bloume-action-btn" onclick="dislikeMessage(this)" title="Pas utile">👎</button>
+                    </div>
+                `;
+            }
+
+            html += '</div></div>';
+
+            if (quickReplies.length > 0) {
+                html += '<div class="bloume-quick-replies">';
+                for (const reply of quickReplies) {
+                    html += `<button class="bloume-quick-reply" onclick="sendQuickReply('${escapeHtml(reply)}')">${escapeHtml(reply)}</button>`;
+                }
+                html += '</div>';
+            }
+
+            messageDiv.innerHTML = html;
+
+            // Supprimer le message de bienvenue si c'est le premier message
+            const welcomeMsg = elements.messages.querySelector('.bloume-welcome-message');
+            if (welcomeMsg && BloumeChat.currentConversation.length === 0) {
+                welcomeMsg.remove();
+            }
+
+            elements.messages.appendChild(messageDiv);
+            elements.messages.scrollTop = elements.messages.scrollHeight;
+
+            // Sauvegarder dans la conversation
+            BloumeChat.currentConversation.push({
+                text,
+                sender,
+                time: new Date().toISOString()
+            });
+        }
+
+        // Formatage du message (support Markdown basique)
+        function formatMessage(text) {
+            return text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n/g, '<br>')
+                .replace(/^### (.*$)/gm, '<h4>$1</h4>')
+                .replace(/^• /gm, '&bull; ');
+        }
+
+        // Indicateur de frappe
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'bloume-message bot';
+            typingDiv.id = 'bloume-typing-indicator';
+            typingDiv.innerHTML = `
+                <div class="blo
+ume-message-wrapper">
+                    <div class="bloume-message-avatar">🤖</div>
+                    <div class="bloume-typing-indicator">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </div>
+            `;
+            elements.messages.appendChild(typingDiv);
+            elements.messages.scrollTop = elements.messages.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingIndicator = document.getElementById('bloume-typing-indicator');
+            if (typingIndicator) {
+                typingIndicator.remove();
+            }
+        }
+
+        // Réponse rapide
+        window.sendQuickReply = function(text) {
+            elements.input.value = text;
+            sendMessage();
+        };
+
+        // Actions sur les messages
+        window.copyMessage = function(btn) {
+            const messageContent = btn.closest('.bloume-message-wrapper').querySelector('.bloume-message-content').innerText;
+            navigator.clipboard.writeText(messageContent);
+            btn.innerHTML = '✓';
+            setTimeout(() => {
+                btn.innerHTML = '📋';
+            }, 2000);
+        };
+
+        window.likeMessage = function(btn) {
+            btn.style.color = 'var(--success)';
+            BloumeChat.stats.satisfaction++;
+            saveToLocalStorage();
+        };
+
+        window.dislikeMessage = function(btn) {
+            btn.style.color = 'var(--error)';
+        };
+
+        // Gestion des suggestions
+        function handleInputChange() {
+            const value = elements.input.value.trim();
+            
+            if (value.length < 2) {
+                elements.suggestions.classList.remove('show');
+                return;
+            }
+
+            const suggestions = generateSuggestions(value);
+            if (suggestions.length > 0) {
+                displaySuggestions(suggestions);
+            } else {
+                elements.suggestions.classList.remove('show');
+            }
+        }
+
+        function generateSuggestions(query) {
+            const normalized = query.toLowerCase();
+            const suggestions = [];
+
+            // Suggestions de commandes rapides
+            const commands = [
+                { text: '/services - Voir tous les services', icon: '🎯' },
+                { text: '/plans - Comparer les abonnements', icon: '💎' },
+                { text: '/concours - Concours en cours', icon: '🎁' },
+                { text: '/support - Ouvrir un ticket', icon: '🎫' },
+                { text: '/help - Aide complète', icon: '❓' }
+            ];
+
+            for (const cmd of commands) {
+                if (cmd.text.toLowerCase().includes(normalized)) {
+                    suggestions.push(cmd);
+                }
+            }
+
+            // Suggestions de services
+            const commonServices = ['Crunchyroll', 'Steam', 'Spotify', 'Netflix', 'Discord', 'Deezer'];
+            for (const service of commonServices) {
+                if (service.toLowerCase().includes(normalized)) {
+                    suggestions.push({ text: `Voir le service ${service}`, icon: '📺' });
+                }
+            }
+
+            return suggestions.slice(0, 5);
+        }
+
+        function displaySuggestions(suggestions) {
+            elements.suggestions.innerHTML = '';
+            for (const suggestion of suggestions) {
+                const item = document.createElement('div');
+                item.className = 'bloume-suggestion-item';
+                item.innerHTML = `<span class="bloume-suggestion-icon">${suggestion.icon}</span>${suggestion.text}`;
+                item.onclick = () => {
+                    elements.input.value = suggestion.text.split(' - ')[0];
+                    elements.suggestions.classList.remove('show');
+                    elements.input.focus();
+                };
+                elements.suggestions.appendChild(item);
+            }
+            elements.suggestions.classList.add('show');
+        }
+
+        // Gestion du menu latéral
+        function openSidebar(type) {
+            elements.sidebar.classList.add('active');
+            
+            switch (type) {
+                case 'history':
+                    elements.sidebarTitle.textContent = 'Historique';
+                    loadHistorySidebar();
+                    break;
+                case 'settings':
+                    elements.sidebarTitle.textContent = 'Paramètres';
+                    loadSettingsSidebar();
+                    break;
+            }
+        }
+
+        function closeSidebar() {
+            elements.sidebar.classList.remove('active');
+        }
+
+        function loadHistorySidebar() {
+            let html = '<div class="bloume-sidebar-section">';
+            html += '<h4>Conversations récentes</h4>';
+            
+            if (BloumeChat.conversations.length === 0) {
+                html += '<p style="color: var(--text-secondary); font-size: 14px;">Aucune conversation sauvegardée</p>';
+            } else {
+                for (let i = BloumeChat.conversations.length - 1; i >= Math.max(0, BloumeChat.conversations.length - 10); i--) {
+                    const conv = BloumeChat.conversations[i];
+                    html += `
+                        <div class="bloume-history-item" onclick="loadConversation(${i})">
+                            <div class="bloume-history-title">Conversation ${i + 1}</div>
+                            <div class="bloume-history-time">${new Date(conv.date).toLocaleDateString('fr-FR')}</div>
+                        </div>
+                    `;
+                }
+            }
+            
+            html += '</div>';
+            html += '<div class="bloume-sidebar-section">';
+            html += '<h4>Statistiques</h4>';
+            html += '<div class="bloume-stats-grid">';
+            html += `
+                <div class="bloume-stat-card">
+                    <div class="bloume-stat-value">${BloumeChat.stats.totalMessages}</div>
+                    <div class="bloume-stat-label">Messages</div>
+                </div>
+                <div class="bloume-stat-card">
+                    <div class="bloume-stat-value">${BloumeChat.conversations.length}</div>
+                    <div class="bloume-stat-label">Conversations</div>
+                </div>
+                <div class="bloume-stat-card">
+                    <div class="bloume-stat-value">${Math.round(BloumeChat.stats.satisfaction * 100 / Math.max(1, BloumeChat.stats.totalMessages))}%</div>
+                    <div class="bloume-stat-label">Satisfaction</div>
+                </div>
+                <div class="bloume-stat-card">
+                    <div class="bloume-stat-value">< 1s</div>
+                    <div class="bloume-stat-label">Réponse</div>
+                </div>
+            `;
+            html += '</div></div>';
+            
+            elements.sidebarContent.innerHTML = html;
+        }
+
+        function loadSettingsSidebar() {
+            let html = '<div class="bloume-sidebar-section">';
+            html += '<h4>Préférences</h4>';
+            
+            const settings = [
+                { key: 'darkMode', label: 'Mode sombre', description: 'Interface en thème sombre' },
+                { key: 'notifications', label: 'Notifications', description: 'Recevoir des notifications' },
+                { key: 'soundEffects', label: 'Sons', description: 'Effets sonores des messages' },
+                { key: 'autoSuggestions', label: 'Suggestions auto', description: 'Suggestions pendant la saisie' },
+                { key: 'saveHistory', label: 'Historique', description: 'Sauvegarder les conversations' }
+            ];
+
+            for (const setting of settings) {
+                const isActive = BloumeChat.settings[setting.key];
+                html += `
+                    <div class="bloume-setting-item">
+                        <div class="bloume-setting-info">
+                            <h5>${setting.label}</h5>
+                            <p>${setting.description}</p>
+                        </div>
+                        <div class="bloume-toggle ${isActive ? 'active' : ''}" onclick="toggleSetting('${setting.key}')"></div>
+                    </div>
+                `;
+            }
+            
+            html += '</div>';
+            html += '<div class="bloume-sidebar-section">';
+            html += '<h4>Actions</h4>';
+            html += `
+                <button class="bloume-action-btn" onclick="exportConversations()" style="width: 100%; padding: 12px; margin-bottom: 8px; background: var(--card-bg); color: var(--text-primary); border-radius: 8px;">
+                    📥 Exporter les conversations
+                </button>
+                <button class="bloume-action-btn" onclick="clearHistory()" style="width: 100%; padding: 12px; background: var(--error); color: white; border-radius: 8px;">
+                    🗑️ Effacer l'historique
+                </button>
+            `;
+            html += '</div>';
+            
+            elements.sidebarContent.innerHTML = html;
+        }
+
+        window.toggleSetting = function(key) {
+            BloumeChat.settings[key] = !BloumeChat.settings[key];
+            saveToLocalStorage();
+            loadSettingsSidebar();
+        };
+
+        window.loadConversation = function(index) {
+            const conv = BloumeChat.conversations[index];
+            elements.messages.innerHTML = '';
+            
+            for (const msg of conv.messages) {
+                addMessage(msg.text, msg.sender, []);
+            }
+            
+            closeSidebar();
+        };
+
+        window.exportConversations = function() {
+            const data = JSON.stringify(BloumeChat.conversations, null, 2);
+            const blob = new Blob([data], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bloumegen-conversations-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+        };
+
+        window.clearHistory = function() {
+            if (confirm('Êtes-vous sûr de vouloir effacer tout l\'historique ?')) {
+                BloumeChat.conversations = [];
+                BloumeChat.currentConversation = [];
+                BloumeChat.stats = {
+                    totalMessages: 0,
+                    totalConversations: 0,
+                    averageResponseTime: 0,
+                    satisfaction: 0
+                };
+                saveToLocalStorage();
+                elements.messages.innerHTML = '<div class="bloume-welcome-message"><div class="bloume-welcome-icon">👋</div><h2>Bienvenue sur BloumeGen !</h2><p>Je suis votre assistant intelligent. Posez-moi toutes vos questions !</p></div>';
+                loadHistorySidebar();
+            }
+        };
+
+        // LocalStorage
+        function saveToLocalStorage() {
+            if (BloumeChat.settings.saveHistory) {
+                localStorage.setItem('bloume-chat-data', JSON.stringify(BloumeChat));
+            }
+        }
+
+        function loadFromLocalStorage() {
+            const data = localStorage.getItem('bloume-chat-data');
+            if (data) {
+                const saved = JSON.parse(data);
+                BloumeChat.conversations = saved.conversations || [];
+                BloumeChat.settings = { ...BloumeChat.settings, ...saved.settings };
+                BloumeChat.stats = { ...BloumeChat.stats, ...saved.stats };
+            }
+        }
+
+        // Utilitaires
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Commandes rapides
+        elements.input.addEventListener('keydown', (e) => {
+            if (e.key === '/' && elements.input.value === '') {
+                e.preventDefault();
+                displayCommandsMenu();
+            }
+        });
+
+        function displayCommandsMenu() {
+            const commands = [
+                { cmd: '/services', desc: 'Voir tous les services disponibles' },
+                { cmd: '/plans', desc: 'Comparer les plans d\'abonnement' },
+                { cmd: '/concours', desc: 'Concours en cours' },
+                { cmd: '/support', desc: 'Ouvrir un ticket de support' },
+                { cmd: '/webhooks', desc: 'Configurer les webhooks VIP' },
+                { cmd: '/hosting', desc: 'BloumeHosting' },
+                { cmd: '/parrainage', desc: 'Programme de parrainage' },
+                { cmd: '/help', desc: 'Aide complète' }
+            ];
+
+            const suggestions = commands.map(c => ({
+                text: `${c.cmd} - ${c.desc}`,
+                icon: '⚡'
+            }));
+
+            displaySuggestions(suggestions);
+        }
+
+        // Initialisation
+        function init() {
+            loadFromLocalStorage();
+            console.log('🤖 BloumeGen Chatbot initialized');
+            console.log('📊 Stats:', BloumeChat.stats);
+            
+            // Afficher le badge de notification
+            if (BloumeChat.conversations.length > 0) {
+                elements.notificationBadge.textContent = Math.min(BloumeChat.conversations.length, 9);
+                elements.notificationBadge.classList.add('show');
+            }
+        }
+
+        // Démarrage
+        init();
+
+        // Sauvegarder avant fermeture
+        window.addEventListener('beforeunload', () => {
+            if (BloumeChat.currentConversation.length > 0) {
+                BloumeChat.conversations.push({
+                    date: new Date().toISOString(),
+                    messages: BloumeChat.currentConversation
+                });
+                BloumeChat.stats.totalConversations++;
+            }
+            saveToLocalStorage();
+        });
+    </script>
+</body>
+</html>
